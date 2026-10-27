@@ -1,0 +1,24 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 50M;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API calls to Hugging Face and inject Bearer Token from Environment
+    location /api/ {
+        proxy_pass https://techygeekhub-instafix.hf.space/;
+        proxy_ssl_server_name on;
+        proxy_set_header Authorization "Bearer ${HF_TOKEN}";
+        proxy_set_header Host techygeekhub-instafix.hf.space;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -502,12 +502,8 @@
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
-  // --- IMPORTANT ---
-  // Set your Bearer Token for ALL APIs here
-  const BEARER_TOKEN = "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";
-
-  // Base URL for all APIs
-  const BASE_URL = "https://techygeekhub-instafix.hf.space";
+  // Base URL for all APIs (proxied via Nginx backend)
+  const BASE_URL = "/api";
 
   // ---------- Elements ----------
   const $ = (id) => document.getElementById(id);
@@ -517,7 +513,7 @@
   const dataInput = $('data-input'), teamInput = $('team-input'), addDataButton = $('add-data-button'), charCount = $('char-count');
   const activityList = $('activity-list');
 
-  $('status-host').textContent = BASE_URL.replace(/^https?:\/\//, '');
+  $('status-host').textContent = 'techygeekhub-instafix.hf.space';
 
   // ---------- Helpers ----------
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -663,7 +659,7 @@
     try {
       const response = await fetch(`${BASE_URL}/instaFix`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BEARER_TOKEN}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "error_message": prompt })
       });
       if (!response.ok) throw new Error(await readError(response));
@@ -702,7 +698,7 @@
     try {
       const response = await fetch(`${BASE_URL}/add_data`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BEARER_TOKEN}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error(await readError(response));
@@ -743,7 +739,6 @@
     try {
       const response = await fetch(`${BASE_URL}/upload_file`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${BEARER_TOKEN}` },
         body: formData
       });
       if (!response.ok) throw new Error(await readError(response));
