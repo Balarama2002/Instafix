@@ -1,0 +1,7 @@
+services:
+  instafix-web:
+    build: .
+    container_name: instafix_app
+    restart: always
+    ports:
+      - "80:80"

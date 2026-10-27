@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InstaFIX™ | TGH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  // Apply saved theme before paint (dark = TGH brand default)
+  try { const t = localStorage.getItem('instafix-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+  :root {
+    /* TGH brand palette (from the TGH Boomi capabilities deck) */
+    --navy-900: #001634;
+    --navy-800: #00204B;
+    --navy-700: #0C1D46;
+    --navy-600: #0E2352;
+    --navy-500: #1C3E92;
+    --line:     #1D3E86;
+    --blue:     #1B7FD4;
+    --cyan:     #4EC8FF;
+    --green:    #2BC48A;
+    --violet:   #9B8BF0;
+    --gold:     #C4A882;
+    --glow: linear-gradient(90deg, #C026D3 0%, #6D5BFF 45%, #22D3EE 100%);
+    --radius: 14px;
+    --sidebar-w: 280px;
+    --font: 'Inter', 'Segoe UI', Arial, sans-serif;
+    --mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  }
+  /* Dark (brand default) */
+  :root, :root[data-theme="dark"] {
+    --bg: #00204B;
+    --bg-soft: #0A2A5C;
+    --surface: #0E2352;
+    --surface-2: #0C1D46;
+    --border: #1D3E86;
+    --text: #FFFFFF;
+    --text-2: #C6D6F5;
+    --muted: #93A9D6;
+    --user-bubble: linear-gradient(135deg, #1B7FD4, #1C3E92);
+    --user-text: #FFFFFF;
+    --input-bg: #0C1D46;
+    --code-bg: #001634;
+    --shadow: 0 10px 30px rgba(0, 10, 30, .35);
+    --danger-bg: rgba(242, 84, 91, .12);
+    --danger: #FF8A8F;
+    --accent: #4EC8FF;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F6FC;
+    --bg-soft: #E8EEF9;
+    --surface: #FFFFFF;
+    --surface-2: #F7F9FE;
+    --border: #D3DDF0;
+    --text: #0B1F45;
+    --text-2: #2A3F68;
+    --muted: #5B6F96;
+    --user-bubble: linear-gradient(135deg, #1B7FD4, #1C3E92);
+    --user-text: #FFFFFF;
+    --input-bg: #FFFFFF;
+    --code-bg: #EEF3FC;
+    --shadow: 0 8px 24px rgba(20, 45, 100, .10);
+    --danger-bg: #FDECEC;
+    --danger: #B42318;
+    --accent: #1567B8;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+  /* ---------- Sidebar (always navy, brand anchor) ---------- */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--navy-900);
+    border-right: 1px solid #12306E;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 18px 18px;
+    color: #FFFFFF;
+    position: relative;
+    z-index: 20;
+  }
+  .brand img { height: 46px; display: block; }
+  .product {
+    margin: 26px 4px 22px;
+  }
+  .glow-line { width: 56px; height: 3px; border-radius: 3px; background: var(--glow); box-shadow: 0 0 12px rgba(78, 200, 255, .55); margin-bottom: 12px; }
+  .product h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.3px; }
+  .product h1 sup { font-size: 12px; font-weight: 600; color: var(--cyan); margin-left: 2px; }
+  .product p { margin: 4px 0 0; color: #93A9D6; font-size: 13px; }
+
+  .nav { display: flex; flex-direction: column; gap: 6px; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 11px 12px;
+    border-radius: 10px; border: 1px solid transparent;
+    background: transparent; color: #C6D6F5; text-align: left; font-weight: 500;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .nav-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .nav-btn:hover { background: rgba(78, 200, 255, .06); color: #FFFFFF; }
+  .nav-btn[aria-current="page"] {
+    background: #0E2352; border-color: #1D3E86; color: #FFFFFF;
+  }
+  .nav-btn[aria-current="page"] svg { color: var(--cyan); }
+  .nav-btn small { display: block; color: #93A9D6; font-size: 11.5px; font-weight: 400; margin-top: 1px; }
+
+  .sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+  .status-card {
+    background: #0C1D46; border: 1px solid #1D3E86; border-radius: 12px; padding: 12px 14px; font-size: 12.5px;
+  }
+  .status-row { display: flex; align-items: center; gap: 8px; color: #C6D6F5; font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(43, 196, 138, .18); }
+  .dot.busy { background: var(--cyan); box-shadow: 0 0 0 3px rgba(78, 200, 255, .2); animation: pulse 1.2s infinite; }
+  .dot.err { background: #F2545B; box-shadow: 0 0 0 3px rgba(242, 84, 91, .2); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .status-card .host { color: #93A9D6; margin-top: 4px; font-family: var(--mono); font-size: 11px; word-break: break-all; }
+  .theme-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 10px; border: 1px solid #1D3E86; background: transparent; color: #C6D6F5; font-size: 13px;
+  }
+  .theme-btn:hover { background: rgba(78, 200, 255, .06); }
+  .theme-btn svg { width: 18px; height: 18px; }
+  .powered { font-size: 11.5px; color: #7A9CC4; text-align: center; line-height: 1.5; }
+  .powered b { color: #C6D6F5; font-weight: 600; }
+  .gold-rule { height: 2px; background: var(--gold); opacity: .7; border-radius: 2px; }
+
+  /* ---------- Main ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; position: relative; }
+  .page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .page[hidden] { display: none; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 20px 32px 16px; border-bottom: 1px solid var(--border);
+  }
+  .topbar h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .topbar p { margin: 3px 0 0; color: var(--muted); font-size: 13.5px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap;
+  }
+  .chip svg { width: 14px; height: 14px; color: var(--accent); }
+  .icon-btn {
+    display: none; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); align-items: center; justify-content: center;
+  }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  /* Chat log */
+  .chat-log { flex: 1; overflow-y: auto; padding: 28px 32px 12px; scroll-behavior: smooth; }
+  .chat-inner { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .chat-log::-webkit-scrollbar { width: 8px; }
+  .chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+  /* Empty state */
+  .hero { text-align: center; padding: 28px 0 8px; }
+  .hero-badge {
+    width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 18px; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 40%, #1B7FD4 0%, #1C3E92 70%); border: 2px solid var(--cyan);
+    box-shadow: 0 0 0 8px rgba(78, 200, 255, .08), 0 12px 30px rgba(27, 127, 212, .35);
+  }
+  .hero-badge svg { width: 36px; height: 36px; color: #FFFFFF; }
+  .hero h3 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.2px; }
+  .hero p { margin: 8px auto 0; color: var(--muted); max-width: 560px; line-height: 1.55; font-size: 14.5px; }
+  .steps { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 22px 0 6px; flex-wrap: wrap; }
+  .step { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
+  .step i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11.5px; background: var(--navy-500); color: var(--cyan); border: 1.5px solid var(--blue); }
+  .step + .arrow { color: var(--muted); }
+  .samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 24px; text-align: left; }
+  .sample {
+    padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-2); text-align: left; line-height: 1.45; font-size: 13.5px; transition: border-color .15s, transform .15s;
+  }
+  .sample:hover { border-color: var(--cyan); transform: translateY(-1px); }
+  .sample b { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; margin-bottom: 4px; }
+  .sample b span { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--cyan)); }
+  .sample code { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* Messages */
+  .msg { display: flex; gap: 12px; align-items: flex-start; animation: rise .22s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 13px; font-weight: 700;
+  }
+  .avatar.bot { background: var(--navy-500); border: 1.5px solid var(--cyan); color: #FFFFFF; }
+  .avatar.bot svg { width: 18px; height: 18px; }
+  .avatar.user { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+  .bubble { max-width: min(760px, 85%); border-radius: var(--radius); padding: 14px 16px; line-height: 1.6; font-size: 14.5px; }
+  .msg.user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+  .msg.bot .bubble { background: var(--surface); border: 1px solid var(--border); border-top-left-radius: 4px; box-shadow: var(--shadow); color: var(--text-2); }
+  .msg.error .bubble { background: var(--danger-bg); border-color: rgba(242, 84, 91, .45); color: var(--danger); }
+  .bubble-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .bubble-head .who { font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--accent); }
+  .msg.error .who { color: var(--danger); }
+  .bubble-head time { font-size: 11.5px; color: var(--muted); }
+  .msg.user .meta { font-size: 11.5px; opacity: .8; margin-top: 6px; }
+  .answer { white-space: pre-wrap; word-break: break-word; }
+  .answer strong { color: var(--text); }
+  .answer code { font-family: var(--mono); font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+  .answer pre { font-family: var(--mono); font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--border); padding: 12px 14px; border-radius: 10px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+  .answer hr { border: 0; border-top: 1px dashed var(--border); margin: 12px 0; }
+  .bubble-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .ghost-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+  }
+  .ghost-btn:hover { color: var(--text); border-color: var(--cyan); }
+  .ghost-btn svg { width: 14px; height: 14px; }
+  .sys { align-self: center; font-size: 12.5px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); padding: 7px 14px; border-radius: 999px; }
+  .typing { display: flex; gap: 5px; padding: 4px 0; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); animation: bounce 1s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; } .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: .45; } 40% { transform: translateY(-5px); opacity: 1; } }
+  .typing-label { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+  /* Composer */
+  .composer-wrap { padding: 12px 32px 22px; }
+  .composer {
+    max-width: 920px; margin: 0 auto; background: var(--input-bg); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .composer:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(78, 200, 255, .12), var(--shadow); }
+  .composer textarea {
+    width: 100%; resize: none; border: 0; outline: none; background: transparent; padding: 16px 18px 6px; line-height: 1.5; min-height: 56px; max-height: 220px; color: var(--text); font-size: 15px;
+  }
+  .composer textarea::placeholder { color: var(--muted); }
+  .composer-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px 10px 16px; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); user-select: none; cursor: pointer; }
+  .toggle input { appearance: none; width: 32px; height: 18px; border-radius: 999px; background: var(--border); position: relative; cursor: pointer; transition: background .15s; margin: 0; }
+  .toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #FFFFFF; transition: transform .15s; }
+  .toggle input:checked { background: var(--green); }
+  .toggle input:checked::after { transform: translateX(14px); }
+  .hint { font-size: 12px; color: var(--muted); }
+  .hint kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
+  .send-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 11px; border: 0;
+    background: linear-gradient(135deg, #4EC8FF, #1B7FD4); color: #001634; font-weight: 700; font-size: 14px; transition: filter .15s, transform .1s;
+  }
+  .send-btn:hover { filter: brightness(1.08); }
+  .send-btn:active { transform: translateY(1px); }
+  .send-btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+  .send-btn svg { width: 17px; height: 17px; }
+  .privacy-note { max-width: 920px; margin: 8px auto 0; font-size: 11.5px; color: var(--muted); text-align: center; }
+
+  /* ---------- Knowledge base ---------- */
+  .kb { flex: 1; overflow-y: auto; padding: 28px 32px; }
+  .kb-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+  .card-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+  .card-icon { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--navy-500); border: 1.5px solid var(--ring, var(--blue)); color: #FFFFFF; flex-shrink: 0; }
+  .card-icon svg { width: 21px; height: 21px; }
+  .card h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--text); }
+  .card p.sub { margin: 3px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .dropzone {
+    flex: 1; min-height: 220px; border: 1.5px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    text-align: center; padding: 20px; color: var(--muted); background: var(--surface-2); cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .dropzone.drag, .dropzone:hover { border-color: var(--cyan); background: rgba(78, 200, 255, .05); }
+  .dropzone svg { width: 34px; height: 34px; color: var(--accent); }
+  .dropzone b { color: var(--text); font-size: 14.5px; }
+  .types { display: flex; gap: 6px; margin-top: 4px; }
+  .types span { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--text-2); }
+  .file-pill { display: none; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+  .file-pill.show { display: flex; }
+  .file-pill button { border: 0; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; }
+  .kb textarea {
+    flex: 1; min-height: 220px; width: 100%; resize: vertical; border-radius: 12px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); padding: 14px; line-height: 1.55; outline: none; font-size: 14px;
+  }
+  .kb textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(78, 200, 255, .12); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .field input { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); outline: none; color: var(--text); }
+  .field input:focus { border-color: var(--cyan); }
+  .primary-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 11px; border: 0; background: linear-gradient(135deg, #4EC8FF, #1B7FD4); color: #001634; font-weight: 700; }
+  .primary-btn.green { background: linear-gradient(135deg, #5BE3AE, #2BC48A); }
+  .primary-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .primary-btn svg { width: 17px; height: 17px; }
+  .activity { max-width: 1100px; margin: 20px auto 0; }
+  .activity h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+  .activity ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .activity li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); word-break: break-word; }
+  .activity li .dot { margin-top: 5px; flex-shrink: 0; }
+  .activity li time { margin-left: auto; color: var(--muted); font-size: 11.5px; white-space: nowrap; padding-left: 10px; }
+  .activity .empty { color: var(--muted); font-size: 13px; }
+
+  /* Toast */
+  .toasts { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 50; }
+  .toast { min-width: 260px; max-width: 380px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 13px; color: var(--text-2); display: flex; gap: 10px; align-items: flex-start; animation: rise .2s ease-out; }
+  .toast .dot { margin-top: 5px; flex-shrink: 0; }
+
+  .scrim { display: none; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .kb-grid { grid-template-columns: 1fr; }
+    .chips { display: none; }
+  }
+  @media (max-width: 760px) {
+    .sidebar { position: fixed; inset: 0 auto 0 0; transform: translateX(-100%); transition: transform .2s; box-shadow: 0 0 40px rgba(0, 0, 0, .4); }
+    body.nav-open .sidebar { transform: none; }
+    body.nav-open .scrim { display: block; position: fixed; inset: 0; background: rgba(0, 10, 30, .5); z-index: 15; }
+    .icon-btn { display: inline-flex; }
+    .topbar { padding: 14px 16px; justify-content: flex-start; }
+    .chat-log, .kb { padding-left: 16px; padding-right: 16px; }
+    .composer-wrap { padding: 10px 16px 14px; }
+    .samples { grid-template-columns: 1fr; }
+    .hint { display: none; }
+    .bubble { max-width: 100%; }
+    .msg .avatar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ============ Sidebar ============ -->
+<aside class="sidebar" id="sidebar" aria-label="InstaFIX navigation">
+  <div class="brand"><img src="data:image/png;base64,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" alt="TGH — Making Integrations Simpler"></div>
+
+  <div class="product">
+    <div class="glow-line"></div>
+    <h1>InstaFIX<sup>™</sup></h1>
+    <p>AI incident resolution, powered by Boomi</p>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn" id="nav-chat" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Resolve Incident<small>Ask InstaFIX for a fix</small></span>
+    </button>
+    <button class="nav-btn" id="nav-kb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+      <span>Knowledge Base<small>Teach InstaFIX past fixes</small></span>
+    </button>
+  </nav>
+
+  <div class="sidebar-foot">
+    <div class="status-card">
+      <div class="status-row"><span class="dot" id="status-dot"></span><span id="status-text">Ready</span></div>
+      <div class="host" id="status-host"></div>
+    </div>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">
+      <span id="theme-label">Light mode</span>
+      <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <div class="gold-rule"></div>
+    <div class="powered"><b>TGH Software Solutions Pvt. Ltd.</b><br>www.techygeekhub.com</div>
+  </div>
+</aside>
+
+<!-- ============ Main ============ -->
+<main class="main">
+
+  <!-- ---------- Chat page ---------- -->
+  <section class="page" id="chat-page" aria-label="Resolve incident">
+    <header class="topbar">
+      <button class="icon-btn" data-open-nav aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div>
+        <h2>Resolve an Incident</h2>
+        <p>Paste an error message or describe the issue. InstaFIX matches it against past resolutions.</p>
+      </div>
+      <div class="chips">
+        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Faster MTTR</span>
+        <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Learns from every ticket</span>
+      </div>
+    </header>
+
+    <div class="chat-log" id="chat-log">
+      <div class="chat-inner" id="chat-inner">
+        <div class="hero" id="hero">
+          <div class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <h3>What's broken today?</h3>
+          <p>Describe the incident the way it appears in Jira, ServiceNow or Zendesk. InstaFIX finds the likely root cause and a recommended fix from resolved tickets.</p>
+          <div class="steps">
+            <span class="step"><i>01</i>Describe</span><span class="arrow">→</span>
+            <span class="step"><i>02</i>Analyze</span><span class="arrow">→</span>
+            <span class="step"><i>03</i>Fix</span><span class="arrow">→</span>
+            <span class="step"><i>04</i>Learn</span>
+          </div>
+          <div class="samples">
+            <button class="sample" style="--c:#4EC8FF" data-prompt="Boomi process failed with: Unable to connect to SFTP server, connection timed out after 30000 ms.">
+              <b><span></span>Connection timeout</b><code>SFTP connection timed out after 30000 ms</code>
+            </button>
+            <button class="sample" style="--c:#2BC48A" data-prompt="HTTP Client connector returned 401 Unauthorized when calling the Salesforce REST API from the Order Sync process.">
+              <b><span></span>Authentication failure</b><code>HTTP 401 Unauthorized from Salesforce API</code>
+            </button>
+            <button class="sample" style="--c:#9B8BF0" data-prompt="Map shape error: Unable to parse date 2026-13-01 using format yyyy-MM-dd in the Invoice transformation.">
+              <b><span></span>Data transformation</b><code>Unable to parse date with format yyyy-MM-dd</code>
+            </button>
+            <button class="sample" style="--c:#F59E0B" data-prompt="Process execution exceeded the 10 minute limit on Boomi Cloud runtime and was terminated.">
+              <b><span></span>Runtime limit</b><code>Execution exceeded 10 minute Cloud limit</code>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea id="chat-input" rows="1" placeholder="Paste the error message or describe the incident…" aria-label="Incident description"></textarea>
+        <div class="composer-bar">
+          <label class="toggle" title="Masks emails, phone numbers and 12-digit ID numbers before the text leaves your browser">
+            <input type="checkbox" id="mask-toggle" checked>
+            Mask personal data
+          </label>
+          <span class="hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line</span>
+          <button class="send-btn" id="send-button">
+            Get fix
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="privacy-note">Avoid pasting customer names, addresses or other personal data. Incident text is sent to the InstaFIX engine for analysis.</p>
+    </div>
+  </section>
+
+  <!-- ---------- Knowledge base page ---------- -->
+  <section class="page" id="kb-page" aria-label="Knowledge base" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-open-nav aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div>
+        <h2>Knowledge Base</h2>
+        <p>Add runbooks, resolved tickets and fix notes so InstaFIX can recommend them next time.</p>
+      </div>
+    </header>
+
+    <div class="kb">
+      <div class="kb-grid">
+        <!-- Upload -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="--ring:#4EC8FF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></div>
+            <div><h3>Upload a document</h3><p class="sub">Runbooks, SOPs or exported ticket history. The file is split into chunks and indexed.</p></div>
+          </div>
+          <label class="dropzone" id="dropzone" for="file-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
+            <b>Drop a file here or click to browse</b>
+            <span>One file at a time</span>
+            <div class="types"><span>.pdf</span><span>.docx</span><span>.txt</span></div>
+          </label>
+          <input id="file-upload" type="file" accept=".pdf,.docx,.txt" hidden>
+          <div class="file-pill" id="file-pill"><span id="file-name"></span><button id="file-clear" aria-label="Remove file">×</button></div>
+          <div class="row">
+            <span class="hint">Only .pdf, .docx and .txt files are supported.</span>
+            <button class="primary-btn" id="upload-button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+              Upload
+            </button>
+          </div>
+        </div>
+
+        <!-- Paste text -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="--ring:#2BC48A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></div>
+            <div><h3>Add a resolution note</h3><p class="sub">Paste a resolved incident and how it was fixed. A unique document ID is generated for you.</p></div>
+          </div>
+          <label class="field">Team
+            <input id="team-input" type="text" value="Support Team" maxlength="60">
+          </label>
+          <textarea id="data-input" placeholder="e.g. Issue: SFTP connection timed out on the Vendor Feed process.&#10;Root cause: Firewall rule removed after network change.&#10;Fix: Re-added outbound rule for port 22 and re-ran the execution."></textarea>
+          <div class="row">
+            <span class="hint" id="char-count">0 characters</span>
+            <button class="primary-btn green" id="add-data-button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add to knowledge base
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="activity">
+        <h4>Recent activity</h4>
+        <ul id="activity-list"><li class="empty">Nothing added in this session yet.</li></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+  // --- IMPORTANT ---
+  // Set your Bearer Token for ALL APIs here
+  const BEARER_TOKEN = "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";
+
+  // Base URL for all APIs
+  const BASE_URL = "https://techygeekhub-instafix.hf.space";
+
+  // ---------- Elements ----------
+  const $ = (id) => document.getElementById(id);
+  const chatLog = $('chat-log'), chatInner = $('chat-inner'), hero = $('hero');
+  const chatInput = $('chat-input'), sendButton = $('send-button'), maskToggle = $('mask-toggle');
+  const fileUpload = $('file-upload'), dropzone = $('dropzone'), filePill = $('file-pill'), fileName = $('file-name'), uploadButton = $('upload-button');
+  const dataInput = $('data-input'), teamInput = $('team-input'), addDataButton = $('add-data-button'), charCount = $('char-count');
+  const activityList = $('activity-list');
+
+  $('status-host').textContent = BASE_URL.replace(/^https?:\/\//, '');
+
+  // ---------- Helpers ----------
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const generateDocId = () => `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  // Light, safe formatting for engine responses: escape first, then add code / bold.
+  function formatAnswer(text) {
+    let html = escapeHtml(text);
+    html = html.replace(/```(?:\w+)?\n?([\s\S]*?)```/g, (_, code) => `<pre>${code.replace(/\n$/, '')}</pre>`);
+    html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\n*^-{3,}$\n*/gm, '<hr>');
+    return html;
+  }
+
+  // Mask common personal identifiers before sending (DPDP-friendly default).
+  function maskPersonalData(text) {
+    let count = 0;
+    const sub = (re, label) => { text = text.replace(re, () => { count++; return label; }); };
+    sub(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]');
+    sub(/(?<![\w-])(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?![\w-])/g, '[phone]');
+    sub(/(?<![\w-])\d{4}[\s-]\d{4}[\s-]\d{4}(?![\w-])/g, '[id-number]');
+    return { text, count };
+  }
+
+  function setStatus(state, label) {
+    const dot = $('status-dot');
+    dot.className = 'dot' + (state === 'busy' ? ' busy' : state === 'err' ? ' err' : '');
+    $('status-text').textContent = label;
+  }
+
+  function scrollToBottom() { chatLog.scrollTop = chatLog.scrollHeight; }
+
+  function toast(message, kind = 'ok') {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<span class="dot ${kind === 'err' ? 'err' : kind === 'busy' ? 'busy' : ''}"></span><span></span>`;
+    el.lastChild.textContent = message;
+    $('toasts').appendChild(el);
+    setTimeout(() => el.remove(), kind === 'err' ? 7000 : 4000);
+  }
+
+  function logActivity(message, kind = 'ok') {
+    const empty = activityList.querySelector('.empty');
+    if (empty) empty.remove();
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="dot ${kind === 'err' ? 'err' : ''}"></span><span></span><time>${now()}</time>`;
+    li.children[1].textContent = message;
+    activityList.prepend(li);
+  }
+
+  const BOT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
+
+  /**
+   * Displays a message in the chat log
+   * @param {'user'|'bot'|'system'} sender
+   * @param {string} message
+   * @param {boolean} [isError=false]
+   * @param {string} [meta]
+   */
+  function displayMessage(sender, message, isError = false, meta = '') {
+    if (hero) hero.remove();
+    if (sender === 'system' || isError) console.log(`System Message: ${message}`);
+
+    if (sender === 'system') {
+      const el = document.createElement('div');
+      el.className = 'sys';
+      el.textContent = message;
+      chatInner.appendChild(el);
+      scrollToBottom();
+      return;
+    }
+
+    const row = document.createElement('div');
+    row.className = `msg ${sender}${isError ? ' error' : ''}`;
+
+    if (sender === 'user') {
+      row.innerHTML = `<div class="avatar user">You</div><div class="bubble"><div class="text"></div>${meta ? '<div class="meta"></div>' : ''}</div>`;
+      row.querySelector('.text').textContent = message;
+      if (meta) row.querySelector('.meta').textContent = meta;
+    } else {
+      row.innerHTML = `
+        <div class="avatar bot">${BOT_ICON}</div>
+        <div class="bubble">
+          <div class="bubble-head"><span class="who">${isError ? 'Something went wrong' : 'InstaFIX recommendation'}</span><time>${now()}</time></div>
+          <div class="answer">${formatAnswer(message)}</div>
+          ${isError ? '' : `<div class="bubble-actions">
+            <button class="ghost-btn" data-copy><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy fix</span></button>
+          </div>`}
+        </div>`;
+      const copyBtn = row.querySelector('[data-copy]');
+      if (copyBtn) copyBtn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(message); copyBtn.lastChild.textContent = 'Copied'; }
+        catch (e) { copyBtn.lastChild.textContent = 'Copy failed'; }
+        setTimeout(() => (copyBtn.lastChild.textContent = 'Copy fix'), 1800);
+      });
+    }
+    chatInner.appendChild(row);
+    scrollToBottom();
+  }
+
+  function showLoading(isLoading) {
+    let el = $('loading-bubble');
+    if (isLoading && !el) {
+      el = document.createElement('div');
+      el.id = 'loading-bubble';
+      el.className = 'msg bot';
+      el.innerHTML = `<div class="avatar bot">${BOT_ICON}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div><div class="typing-label">Analysing against past incidents…</div></div>`;
+      chatInner.appendChild(el);
+      scrollToBottom();
+    } else if (!isLoading && el) {
+      el.remove();
+    }
+  }
+
+  async function readError(response) {
+    let errorText = `Error: ${response.status} ${response.statusText}`;
+    try { const body = await response.text(); errorText = `API Error: ${response.status}. Response: ${body}`; } catch (e) { /* ignore */ }
+    return errorText;
+  }
+
+  // ---------- API: /instaFix ----------
+  let busy = false;
+  async function handleAskLLM() {
+    const raw = chatInput.value.trim();
+    if (!raw || busy) return;
+
+    let prompt = raw, meta = '';
+    if (maskToggle.checked) {
+      const m = maskPersonalData(raw);
+      prompt = m.text;
+      if (m.count) meta = `${m.count} personal detail${m.count > 1 ? 's' : ''} masked before sending`;
+    }
+
+    displayMessage('user', prompt, false, meta);
+    chatInput.value = '';
+    autoGrow();
+    busy = true; sendButton.disabled = true;
+    setStatus('busy', 'Analysing incident…');
+    showLoading(true);
+
+    try {
+      const response = await fetch(`${BASE_URL}/instaFix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BEARER_TOKEN}` },
+        body: JSON.stringify({ "error_message": prompt })
+      });
+      if (!response.ok) throw new Error(await readError(response));
+
+      const result = await response.json();
+      console.log('Debug: /instaFix Response:', result);
+      const answer = (result.results && Array.isArray(result.results))
+        ? result.results.join('\n\n---\n\n')
+        : "No 'results' array found in the response.";
+      showLoading(false);
+      displayMessage('bot', answer);
+      setStatus('ok', 'Ready');
+    } catch (error) {
+      console.error('AskLLM Error:', error);
+      showLoading(false);
+      displayMessage('bot', `An error occurred: ${error.message}`, true);
+      setStatus('err', 'Last request failed');
+    }
+    busy = false; sendButton.disabled = false;
+    chatInput.focus();
+  }
+
+  // ---------- API: /add_data ----------
+  async function handleAddData() {
+    const textData = dataInput.value.trim();
+    if (!textData) { toast('Add some text first.', 'err'); return; }
+
+    addDataButton.disabled = true;
+    setStatus('busy', 'Adding to knowledge base…');
+    const payload = {
+      "text": [textData],
+      "metadata": [{ "team_name": teamInput.value.trim() || 'Support Team', "source": "manual_add" }],
+      "doc_ids": [generateDocId()]
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}/add_data`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${BEARER_TOKEN}` },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const result = await response.json();
+      console.log('Debug: /add_data Response:', result);
+      const msg = (result.message && result.rows) ? `${result.message} (${result.rows} row(s) added)` : 'Data added, but the response format was unexpected.';
+      toast(msg); logActivity(`Resolution note — ${msg}`);
+      dataInput.value = ''; updateCharCount();
+      setStatus('ok', 'Ready');
+    } catch (error) {
+      console.error('Add Data Error:', error);
+      toast(`Failed to add data: ${error.message}`, 'err'); logActivity(`Resolution note failed — ${error.message}`, 'err');
+      setStatus('err', 'Last request failed');
+    }
+    addDataButton.disabled = !dataInput.value.trim();
+  }
+
+  // ---------- API: /upload_file ----------
+  const ALLOWED = ['pdf', 'docx', 'txt'];
+  function setFile(file) {
+    if (!file) { fileUpload.value = ''; filePill.classList.remove('show'); uploadButton.disabled = true; return; }
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!ALLOWED.includes(ext)) { toast('Only .pdf, .docx and .txt files are supported.', 'err'); setFile(null); return; }
+    fileName.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} KB`;
+    filePill.classList.add('show');
+    uploadButton.disabled = false;
+  }
+  let pickedFile = null;
+
+  async function handleUploadFile() {
+    const file = pickedFile || fileUpload.files[0];
+    if (!file) { toast('No file selected.', 'err'); return; }
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    uploadButton.disabled = true;
+    setStatus('busy', `Uploading ${file.name}…`);
+    try {
+      const response = await fetch(`${BASE_URL}/upload_file`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${BEARER_TOKEN}` },
+        body: formData
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const result = await response.json();
+      console.log('Debug: /upload_file Response:', result);
+      const msg = (result.message && result.filename) ? `${result.message} (File: ${result.filename}, Chunks: ${result.chunks_stored})` : 'File uploaded, but the response format was unexpected.';
+      toast(msg); logActivity(`Document — ${msg}`);
+      pickedFile = null; setFile(null);
+      setStatus('ok', 'Ready');
+    } catch (error) {
+      console.error('Upload File Error:', error);
+      toast(`Failed to upload file: ${error.message}`, 'err'); logActivity(`Upload of ${file.name} failed — ${error.message}`, 'err');
+      uploadButton.disabled = false;
+      setStatus('err', 'Last request failed');
+    }
+  }
+
+  // ---------- UI wiring ----------
+  function autoGrow() { chatInput.style.height = 'auto'; chatInput.style.height = Math.min(chatInput.scrollHeight, 220) + 'px'; }
+  chatInput.addEventListener('input', autoGrow);
+  chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); handleAskLLM(); } });
+  sendButton.addEventListener('click', handleAskLLM);
+  document.querySelectorAll('.sample').forEach((b) => b.addEventListener('click', () => { chatInput.value = b.dataset.prompt; autoGrow(); chatInput.focus(); }));
+
+  fileUpload.addEventListener('change', () => { pickedFile = fileUpload.files[0] || null; setFile(pickedFile); });
+  $('file-clear').addEventListener('click', () => { pickedFile = null; setFile(null); });
+  ['dragenter', 'dragover'].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) { pickedFile = f; setFile(f); } });
+  uploadButton.addEventListener('click', handleUploadFile);
+
+  function updateCharCount() { const n = dataInput.value.length; charCount.textContent = `${n.toLocaleString()} character${n === 1 ? '' : 's'}`; addDataButton.disabled = !dataInput.value.trim(); }
+  dataInput.addEventListener('input', updateCharCount);
+  addDataButton.addEventListener('click', handleAddData);
+
+  // Navigation
+  function show(page) {
+    const chat = page === 'chat';
+    $('chat-page').hidden = !chat; $('kb-page').hidden = chat;
+    $('nav-chat').toggleAttribute('aria-current', chat); $('nav-kb').toggleAttribute('aria-current', !chat);
+    if (chat) $('nav-chat').setAttribute('aria-current', 'page'); else $('nav-kb').setAttribute('aria-current', 'page');
+    document.body.classList.remove('nav-open');
+    if (chat) chatInput.focus();
+  }
+  $('nav-chat').addEventListener('click', () => show('chat'));
+  $('nav-kb').addEventListener('click', () => show('kb'));
+  document.querySelectorAll('[data-open-nav]').forEach((b) => b.addEventListener('click', () => document.body.classList.add('nav-open')));
+  $('scrim').addEventListener('click', () => document.body.classList.remove('nav-open'));
+
+  // Theme
+  function syncThemeButton() {
+    const dark = document.documentElement.dataset.theme !== 'light';
+    $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    $('icon-sun').toggleAttribute('hidden', !dark); $('icon-moon').toggleAttribute('hidden', dark);
+  }
+  $('theme-toggle').addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('instafix-theme', next); } catch (e) {}
+    syncThemeButton();
+  });
+  syncThemeButton();
+  chatInput.focus();
+</script>
+</body>
+</html>
