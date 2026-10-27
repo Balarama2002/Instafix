@@ -11,6 +11,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=n8n_default"
       - "traefik.http.routers.instafix.entrypoints=web,websecure"
+      - "traefik.http.routers.instafix.middlewares=n8n@docker"
       - "traefik.http.routers.instafix.rule=Host(`instafix.srv1901759.hstgr.cloud`)"
       - "traefik.http.routers.instafix.tls=true"
       - "traefik.http.routers.instafix.tls.certresolver=mytlschallenge"
